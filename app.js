@@ -259,7 +259,7 @@ function updateUser(dn) {
     });
 }
 function updateUserSn(dn) {
-    var change = new ldap.Change({
+    const change = new ldap.Change({
         operation: 'replace',
         modification: new ldap.Attribute({
             type: 'sn',
