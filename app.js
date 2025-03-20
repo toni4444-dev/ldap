@@ -242,7 +242,7 @@ function deleteUserFromGroup(groupDN, userDN) {
     });
 }
 function updateUser(dn) {
-    var change = new ldap.Change({
+    const change = new ldap.Change({
         operation: 'add',
         modification: new ldap.Attribute({
             type: 'displayName',
@@ -272,7 +272,6 @@ function updateUserSn(dn) {
             console.log("Error updating user sn:", err);
         } else {
             console.log("User sn updated successfully");
-            // Now run the compare
             compare(dn);
         }
     });
@@ -305,7 +304,6 @@ function compare(dn) {
     });
 }
 
-/*use this to modify the dn of existing user*/
 function modifyDN(dn) {
 
     client.modifyDN(dn, 'cn=ba4r', function (err) {
