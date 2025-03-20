@@ -18,7 +18,7 @@ function authenticateDN(username, password) {
             console.log('Error in LDAP authentication:', err);
         } else {
             console.log("Authentication successful");
-            // === LDAP Operations - Uncomment as needed ===
+            // LDAP Operations 
             
             // Search for entries in the directory
             // searchUser();
@@ -314,11 +314,6 @@ function modifyDN(dn) {
         }
     });
 }
-
-
-
-
-
 
 // Run authentication
 authenticateDN("uid=admin,ou=system", "secret");
