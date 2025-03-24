@@ -32,15 +32,39 @@ function authenticateDN(username, password) {
             
             // Delete a user from the directory
             // deleteUser();
+            //deleteUser('cn=Bob Green,ou=Developers,ou=Nano,dc=example,dc=com');
+
             
             // Create a new group
             // createGroup();
+            //createGroup("Developers", "Group for all developers");
+            // createGroup(
+            //     "Developers", 
+            //     "Software development team", 
+            //     "cn=John Doe,ou=Developers,ou=Nano,dc=example,dc=com"
+            // );
+            //createGroup("marketing");
+
+             listGroupMembers('cn=Administrators,ou=groups,dc=example,dc=com');
+        //    listGroupMembers('cn=marketing,ou=groups,dc=example,dc=com');
+
+// Inside your authentication success callback
+// deleteUserFromGroup(
+//     'cn=Administrators,ou=groups,dc=example,dc=com',
+//     'cn=beenie  mac,ou=Developers,ou=Nano,dc=example,dc=com'
+// );
+
             
             // Add a user to an existing group
             // addUserToGroup(
-            //     'cn=Administrators,ou=groups,dc=example,dc=com',  
-            //     'cn=Bob Green,ou=Developers,ou=Nano,dc=example,dc=com'
+            //    'cn=Administrators,ou=groups,dc=example,dc=com',  
+            //    'cn=beenie  mac,ou=Developers,ou=Nano,dc=example,dc=com'
             // );
+            // Inside your authentication success callback
+// deleteUserFromGroup(
+//     'cn=Administrators,ou=groups,dc=example,dc=com',
+//     'cn=beenie mac,ou=Developers,ou=Nano,dc=example,dc=com'
+// );
             
             // List all members of a group
             // listGroupMembers('cn=Administrators,ou=groups,dc=example,dc=com');
@@ -50,24 +74,41 @@ function authenticateDN(username, password) {
             //     'cn=Administrators,ou==example,dc=com',
             //     ' cn=Alice Brown,ou=Support,ou=Nano,dc=example,dc=com'
             // );
-            // updateUser('cn=Sarah Lee,ou=Developers,ou=Finserve,dc=example,dc=com')
-         //
-        //  compare('cn=Sarah Lee,ou=Developers,ou=Finserve,dc=example,dc=com');        
+         // Inside your authentication success callback
+            // updateUser(
+            //     'cn=Alice Brown,ou=Support,ou=Nano,dc=example,dc=com', 
+            //     'mail', 
+            //     'alice.updated@nano.com', 
+            //     'replace'
+            // );
+
+            // searchUser('cn', 'Alice Brown');
+            // searchUser('mail', 'alice.brown@nano.com');
+            // searchUser('cn', 'Alice Brown', ['mail', 'telephoneNumber', 'title']);
+
+
+
+       // compare('cn=Alice Brown,ou=Support,ou=Nano,dc=example,dc=com', 'sn', 'Brown');
+
+        
+        
             //check users atributes 
             // checkUserAttributes('cn=Sarah Lee,ou=Developers,ou=Finserve,dc=example,dc=com');
             
             // compare( 'cn=Sarah Lee,ou=Developers,ou=Finserve,dc=example,dc=com');
+
+            modifyDN('cn=Alice Brown,ou=Support,ou=Nano,dc=example,dc=com', 'cn=Alice Smith');
         }
     });
 }
 
-function searchUser(username) {  
-    console.log(`Searching for user: ${username}`);
+function searchUser(attributeName, attributeValue, returnAttributes = ['sn', 'cn', 'mail', 'uid']) {
+    console.log(`Searching for ${attributeName}=${attributeValue}`);
 
     const opts = {
-        filter: `(cn=${username})`,  
-        scope: 'sub',                
-        attributes: ['sn', 'cn', 'mail', 'uid']  
+        filter: `(${attributeName}=${attributeValue})`,
+        scope: 'sub',
+        attributes: returnAttributes
     };
 
     client.search('dc=example,dc=com', opts, function (err, res) {
@@ -76,15 +117,32 @@ function searchUser(username) {
             return;
         }
 
+        let foundEntries = 0;
+
         res.on('searchEntry', function (entry) {
-            console.log('User Found:', entry.dn);
-            entry.attributes.forEach(attr => {
-                console.log(`${attr.type}: ${attr.vals.join(', ')}`);
-            });
+            foundEntries++;
+            console.log(`\nUser Found (#${foundEntries}):`);
+            console.log(`DN: ${entry.dn}`);
+            
+            if (entry.attributes && entry.attributes.length > 0) {
+                console.log("Attributes:");
+                entry.attributes.forEach(attr => {
+                    console.log(`  ${attr.type}: ${attr.vals.join(', ')}`);
+                });
+            } else {
+                console.log("No attributes returned or user has no attributes.");
+            }
         });
 
-        res.on('end', function () {
-            console.log('Search completed.');
+        res.on('error', function(err) {
+            console.error("Error during search:", err);
+        });
+
+        res.on('end', function (result) {
+            if (foundEntries === 0) {
+                console.log(`No entries found for ${attributeName}=${attributeValue}`);
+            }
+            console.log(`\nSearch completed. Found ${foundEntries} entries.`);
         });
     });
 }
@@ -112,8 +170,8 @@ function addUser(cn, sn,uid,password,email,ou) {
     });
 }
 
-function deleteUser() {
-    client.del('cn=tommy,ou=Developers,ou=Nano,dc=example,dc=com', function (err) {
+function deleteUser(dn) {
+    client.del(dn , function (err) {
         if (err) {
             console.log("Error deleting user:", err);
         } else {
@@ -121,20 +179,25 @@ function deleteUser() {
         }
     });
 }
-
-function createGroup() {
+function createGroup(groupName, description, initialMember) {
+    groupName = groupName || 'DefaultGroup';
+    description = description || 'Default Description';
+    const defaultMember = 'uid=admin,ou=system';
+    
     const entry = {
         objectclass: ['groupOfUniqueNames', 'top'],
-        cn: 'Administrators',
-        description: 'Admin group',
-        uniqueMember: 'uid=admin,ou=system'
+        cn: groupName,
+        description: description,
+        uniqueMember: initialMember || defaultMember
     };
 
-    client.add('cn=Administrators,ou=groups,dc=example,dc=com', entry, function (err) {
+    const dn = `cn=${groupName},ou=groups,dc=example,dc=com`;
+    
+    client.add(dn, entry, function (err) {
         if (err) {
-            console.log("Error creating group:", err);
+            console.log(`Error creating group ${groupName}:`, err);
         } else {
-            console.log("Group created successfully");
+            console.log(`Group ${groupName} created successfully with DN: ${dn}`);
         }
     });
 }
@@ -247,20 +310,20 @@ function deleteUserFromGroup(groupDN, userDN) {
         });
     });
 }
-function updateUser(dn) {
+function updateUser(dn, attributeName, attributeValue, operation = 'add') {
     const change = new ldap.Change({
-        operation: 'add',
+        operation: operation,
         modification: new ldap.Attribute({
-            type: 'displayName',
-            values: ['657']
+            type: attributeName,
+            values: [attributeValue]
         })
     });
 
     client.modify(dn, change, function (err) {
         if (err) {
-            console.log("Error updating user:", err);
+            console.log(`Error updating user (${operation} ${attributeName}):`, err);
         } else {
-            console.log("User updated successfully");
+            console.log(`User updated successfully (${operation} ${attributeName}=${attributeValue})`);
         }
     });
 }
@@ -300,23 +363,35 @@ function checkUserAttributes(dn) {
         });
     });
 }
-function compare(dn) {
-    client.compare(dn, 'sn', '657', function (err, matched) {
+function compare(dn, attributeName, expectedValue) {
+    console.log(`Comparing ${attributeName} attribute for ${dn}`);
+    console.log(`Expected value: "${expectedValue}"`);
+    
+    client.compare(dn, attributeName, expectedValue, function (err, matched) {
         if (err) {
-            console.log("err in update user " + err);
+            console.log(`Error comparing ${attributeName}: ${err}`);
         } else {
-            console.log("result :" + matched);
+            if (matched) {
+                console.log(`✓ Match: ${attributeName} equals "${expectedValue}"`);
+            } else {
+                console.log(`✗ No match: ${attributeName} does NOT equal "${expectedValue}"`);
+            }
         }
     });
 }
 
-function modifyDN(dn) {
-
-    client.modifyDN(dn, 'cn=ba4r', function (err) {
+function modifyDN(oldDN, newRDN) {
+    console.log("Starting DN modification...");
+    console.log("Old DN: " + oldDN);
+    console.log("New RDN: " + newRDN);
+    
+    client.modifyDN(oldDN, newRDN, function (err) {
         if (err) {
-            console.log("err in update user " + err);
+            console.log("An error occurred while modifying DN:");
+            console.log(err);
         } else {
-            console.log("result :");
+            console.log("Modification successful!");
+            console.log("Entry renamed to: " + newRDN);
         }
     });
 }
