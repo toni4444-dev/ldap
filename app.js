@@ -21,10 +21,14 @@ function authenticateDN(username, password) {
             // LDAP Operations 
             
             // Search for entries in the directory
-            // searchUser();
+            //  searchUser();
+            // Call this inside the authentication success callback
+            //   searchUser('Mike Johnson');
             
             // Add a new user to the directory
             // addUser();
+            // Inside authenticateDN success callback
+        //    addUser('jack Smith', 'Smith', 'jsmith', 'secure_password', 'jack.smith@nano.com', 'Developers');
             
             // Delete a user from the directory
             // deleteUser();
@@ -52,29 +56,28 @@ function authenticateDN(username, password) {
             //check users atributes 
             // checkUserAttributes('cn=Sarah Lee,ou=Developers,ou=Finserve,dc=example,dc=com');
             
-            compare( 'cn=Sarah Lee,ou=Developers,ou=Finserve,dc=example,dc=com');
+            // compare( 'cn=Sarah Lee,ou=Developers,ou=Finserve,dc=example,dc=com');
         }
     });
 }
 
-function searchUser() {  
-    console.log("Searching users in LDAP...");
+function searchUser(username) {  
+    console.log(`Searching for user: ${username}`);
 
     const opts = {
-        filter: '(objectClass=*)',  
-        scope: 'sub',                    
-        attributes: ['sn', 'cn']  
+        filter: `(cn=${username})`,  
+        scope: 'sub',                
+        attributes: ['sn', 'cn', 'mail', 'uid']  
     };
 
     client.search('dc=example,dc=com', opts, function (err, res) {
         if (err) { 
             console.error("Error in search:", err);
-            client.unbind();
             return;
         }
 
         res.on('searchEntry', function (entry) {
-            console.log('Entry Found:', entry.dn);
+            console.log('User Found:', entry.dn);
             entry.attributes.forEach(attr => {
                 console.log(`${attr.type}: ${attr.vals.join(', ')}`);
             });
@@ -82,27 +85,30 @@ function searchUser() {
 
         res.on('end', function () {
             console.log('Search completed.');
-            client.unbind();
         });
     });
 }
 
-function addUser() {
+function addUser(cn, sn,uid,password,email,ou) {
     const entry = {
-        sn: 'bar',
-        cn: 'tommy',
-        uid: 'btommy',
-        userPassword: 'password123',
-        mail: 'john.smith@nano.com',
+        sn: 'sn',
+        cn: 'cn',
+        uid: 'uid',
+        userPassword: 'password',
+        mail: 'email',
         objectclass: ['inetOrgPerson', 'organizationalPerson', 'person', 'top']
     };
+    const dn = `cn=${cn},ou=${ou},ou=Nano,dc=example,dc=com`;
 
-    client.add('cn=tommy,ou=Developers,ou=Nano,dc=example,dc=com', entry, function (err) {
+    client.add(dn, entry, function (err) {
         if (err) {
             console.log("Error adding user:", err);
         } else {
-            console.log("User added successfully");
+            console.log(`User ${cn} added successfully with DN: ${dn}`);
         }
+
+
+
     });
 }
 
