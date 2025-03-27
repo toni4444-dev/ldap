@@ -372,9 +372,9 @@ function compare(dn, attributeName, expectedValue) {
             console.log(`Error comparing ${attributeName}: ${err}`);
         } else {
             if (matched) {
-                console.log(`✓ Match: ${attributeName} equals "${expectedValue}"`);
+                console.log(` Match: ${attributeName} equals "${expectedValue}"`);
             } else {
-                console.log(`✗ No match: ${attributeName} does NOT equal "${expectedValue}"`);
+                console.log(`No match: ${attributeName} does NOT equal "${expectedValue}"`);
             }
         }
     });
@@ -398,3 +398,4 @@ function modifyDN(oldDN, newRDN) {
 
 // Run authentication
 authenticateDN("uid=admin,ou=system", "secret");
+  
