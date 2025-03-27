@@ -45,7 +45,7 @@ function authenticateDN(username, password) {
             // );
             //createGroup("marketing");
 
-             listGroupMembers('cn=Administrators,ou=groups,dc=example,dc=com');
+            //  listGroupMembers('cn=Administrators,ou=groups,dc=example,dc=com');
         //    listGroupMembers('cn=marketing,ou=groups,dc=example,dc=com');
 
 // Inside your authentication success callback
